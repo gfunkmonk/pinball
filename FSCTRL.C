@@ -1481,8 +1481,8 @@ Return Value:
 
         Sectors = LiXDiv( PartitionInformation.PartitionLength, 0x200 );
 
-        if ( (Sectors.HighPart != 0) ||
-             (Sectors.LowPart < SuperSector->NumberOfSectors) ) {
+        if ((Sectors.HighPart == 0) &&
+            (Sectors.LowPart < SuperSector->NumberOfSectors)) {
 
             return FALSE;
         }

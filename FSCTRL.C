@@ -1387,6 +1387,9 @@ Return Value:
     NTSTATUS Status;
     BIOS_PARAMETER_BLOCK Bios;
     PARTITION_INFORMATION PartitionInformation;
+    LARGE_INTEGER SuperSectorLength;
+    LARGE_INTEGER BootSectorLength;
+    ULONG BootSectorCount;
 
     UNREFERENCED_PARAMETER( IrpContext );
 
@@ -1428,6 +1431,21 @@ Return Value:
 
     if (((Bios.Sectors == 0) && (Bios.LargeSectors == 0)) ||
         ((Bios.Sectors != 0) && (Bios.LargeSectors != 0))) {
+
+        return FALSE;
+    }
+
+    BootSectorCount = (Bios.Sectors != 0 ? Bios.Sectors : Bios.LargeSectors);
+
+    BootSectorLength = LiXMul( LiFromUlong(BootSectorCount),
+                               Bios.BytesPerSector );
+
+    SuperSectorLength = LiXMul( LiFromUlong(SuperSector->NumberOfSectors),
+                                Bios.BytesPerSector );
+
+    if ((BootSectorLength.HighPart < SuperSectorLength.HighPart) ||
+        ((BootSectorLength.HighPart == SuperSectorLength.HighPart) &&
+         (BootSectorLength.LowPart < SuperSectorLength.LowPart))) {
 
         return FALSE;
     }
@@ -1477,12 +1495,9 @@ Return Value:
 
     if ( NT_SUCCESS( Status ) ) {
 
-        LARGE_INTEGER Sectors;
-
-        Sectors = LiXDiv( PartitionInformation.PartitionLength, 0x200 );
-
-        if ((Sectors.HighPart == 0) &&
-            (Sectors.LowPart < SuperSector->NumberOfSectors)) {
+        if ((PartitionInformation.PartitionLength.HighPart < SuperSectorLength.HighPart) ||
+            ((PartitionInformation.PartitionLength.HighPart == SuperSectorLength.HighPart) &&
+             (PartitionInformation.PartitionLength.LowPart < SuperSectorLength.LowPart))) {
 
             return FALSE;
         }
